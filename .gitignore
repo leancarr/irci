@@ -1,0 +1,27 @@
+# Build / emulator binaries
+rtm32
+rtm32_test
+rtm32.orig
+rtm32.v*.bak
+*.o
+*.bin
+*.rom
+*.hex
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs / debug
+*.log
+emu*.log
+
+# Assembler intermediates
+*.rtm
+*.diff
+*.txt.bak
+
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
