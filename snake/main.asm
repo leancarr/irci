@@ -36,19 +36,25 @@ end_delay:
     ADD $a2, $zero, $v0         ; Actualizar direccion
 keep_direction:
 
-    ; Mover serpiente
-    JAL update_snake
-    
-    ; El nuevo index de update_snake viene en $v0
+    ; Mover serpiente: calcular candidato SIN mover, chequear, y solo
+    ; entonces mover/dibujar. (Antes se chequeaba DESPUES de dibujar la
+    ; nueva cabeza, que es 'O' -> muerte instantanea en el frame 1.)
+    ADD $t8, $zero, $a1        ; backup head actual ($t8 libre en todo el juego)
+    JAL compute_next          ; $v0 = candidato (puro, no toca memoria)
+
+    ; Check Collision sobre el candidato
     ADD $a1, $zero, $v0
-    
-    ; Check Collision
     JAL check_collision
-    
+
     ; si $v0 == 1 (Fatal), Game Over
     ADDI $t0, $zero, 1
     BEQ $v0, $t0, game_over
-    
+
+    ; Seguro (0) o comida (2): restaurar head y mover/dibujar
+    ADD $a1, $zero, $t8
+    JAL update_snake
+    ADD $a1, $zero, $v0
+
     ; Repetir bucle
     J game_loop
     

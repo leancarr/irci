@@ -36,19 +36,25 @@ end_delay:
     ADD $a2, $zero, $v0         ; Actualizar direccion
 keep_direction:
 
-    ; Mover serpiente
-    JAL update_snake
-    
-    ; El nuevo index de update_snake viene en $v0
+    ; Mover serpiente: calcular candidato SIN mover, chequear, y solo
+    ; entonces mover/dibujar. (Antes se chequeaba DESPUES de dibujar la
+    ; nueva cabeza, que es 'O' -> muerte instantanea en el frame 1.)
+    ADD $t8, $zero, $a1        ; backup head actual ($t8 libre en todo el juego)
+    JAL compute_next          ; $v0 = candidato (puro, no toca memoria)
+
+    ; Check Collision sobre el candidato
     ADD $a1, $zero, $v0
-    
-    ; Check Collision
     JAL check_collision
-    
+
     ; si $v0 == 1 (Fatal), Game Over
     ADDI $t0, $zero, 1
     BEQ $v0, $t0, game_over
-    
+
+    ; Seguro (0) o comida (2): restaurar head y mover/dibujar
+    ADD $a1, $zero, $t8
+    JAL update_snake
+    ADD $a1, $zero, $v0
+
     ; Repetir bucle
     J game_loop
     
@@ -210,48 +216,55 @@ no_input:
 ; $v0 = new head index
 
 update_snake:
+    ; push $ra (llamamos a compute_next con JAL anidado)
+    ADDI $sp, $sp, -4
+    SW $ra, 0($sp)
+
     ; Erase old head
     ADD $t0, $a0, $a1
     ADDI $t1, $zero, 46   ; '.'
     SB $t1, 0($t0)
-    
-    ; Determine offset based on input
-    ADDI $t1, $zero, 119  ; 'w'
-    BEQ $a2, $t1, move_up
-    ADDI $t1, $zero, 115  ; 's'
-    BEQ $a2, $t1, move_down
-    ADDI $t1, $zero, 97   ; 'a'
-    BEQ $a2, $t1, move_left
-    ADDI $t1, $zero, 100  ; 'd'
-    BEQ $a2, $t1, move_right
-    
-    ; Default to moving right if unknown
-    J move_right
 
-move_up:
-    ADDI $t2, $zero, 16
-    SUB $v0, $a1, $t2
-    J draw_new_head
+    ; Candidato (puro)
+    JAL compute_next
 
-move_down:
-    ADDI $t2, $zero, 16
-    ADD $v0, $a1, $t2
-    J draw_new_head
-    
-move_left:
-    ADDI $t2, $zero, 1
-    SUB $v0, $a1, $t2
-    J draw_new_head
-    
-move_right:
-    ADDI $t2, $zero, 1
-    ADD $v0, $a1, $t2
-    J draw_new_head
-    
-draw_new_head:
+    ; Dibujar nueva cabeza
     ADD $t0, $a0, $v0
     ADDI $t1, $zero, 79   ; 'O'
     SB $t1, 0($t0)
+
+    ; pop $ra
+    LW $ra, 0($sp)
+    ADDI $sp, $sp, 4
+    JR $ra
+; Compute Next Head (pure: no memory writes)
+; Input:  $a1 = current head index, $a2 = direction (119='w',97='a',115='s',100='d')
+; Output: $v0 = candidate index. Preserves $a1,$a2. Clobbers $t1,$t2.
+compute_next:
+    ADDI $t1, $zero, 119  ; 'w'
+    BEQ $a2, $t1, up_c
+    ADDI $t1, $zero, 115  ; 's'
+    BEQ $a2, $t1, down_c
+    ADDI $t1, $zero, 97   ; 'a'
+    BEQ $a2, $t1, left_c
+    ADDI $t1, $zero, 100  ; 'd'
+    BEQ $a2, $t1, right_c
+    J right_c             ; default: derecha
+up_c:
+    ADDI $t2, $zero, 16
+    SUB $v0, $a1, $t2
+    JR $ra
+down_c:
+    ADDI $t2, $zero, 16
+    ADD $v0, $a1, $t2
+    JR $ra
+left_c:
+    ADDI $t2, $zero, 1
+    SUB $v0, $a1, $t2
+    JR $ra
+right_c:
+    ADDI $t2, $zero, 1
+    ADD $v0, $a1, $t2
     JR $ra
 ; Collision Detection Module
 ; Checks the future tile of the snake head to determine the game state.

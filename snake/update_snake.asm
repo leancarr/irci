@@ -6,48 +6,27 @@
 ; $a2 = direction (119='w', 97='a', 115='s', 100='d')
 ; Output:
 ; $v0 = new head index
+; NOTA: usa JAL anidado a compute_next -> guarda $ra en pila.
 
 update_snake:
+    ; push $ra (llamamos a compute_next con JAL anidado)
+    ADDI $sp, $sp, -4
+    SW $ra, 0($sp)
+
     ; Erase old head
     ADD $t0, $a0, $a1
     ADDI $t1, $zero, 46   ; '.'
     SB $t1, 0($t0)
-    
-    ; Determine offset based on input
-    ADDI $t1, $zero, 119  ; 'w'
-    BEQ $a2, $t1, move_up
-    ADDI $t1, $zero, 115  ; 's'
-    BEQ $a2, $t1, move_down
-    ADDI $t1, $zero, 97   ; 'a'
-    BEQ $a2, $t1, move_left
-    ADDI $t1, $zero, 100  ; 'd'
-    BEQ $a2, $t1, move_right
-    
-    ; Default to moving right if unknown
-    J move_right
 
-move_up:
-    ADDI $t2, $zero, 16
-    SUB $v0, $a1, $t2
-    J draw_new_head
+    ; Candidato (puro, ver compute_next.asm)
+    JAL compute_next
 
-move_down:
-    ADDI $t2, $zero, 16
-    ADD $v0, $a1, $t2
-    J draw_new_head
-    
-move_left:
-    ADDI $t2, $zero, 1
-    SUB $v0, $a1, $t2
-    J draw_new_head
-    
-move_right:
-    ADDI $t2, $zero, 1
-    ADD $v0, $a1, $t2
-    J draw_new_head
-    
-draw_new_head:
+    ; Dibujar nueva cabeza
     ADD $t0, $a0, $v0
     ADDI $t1, $zero, 79   ; 'O'
     SB $t1, 0($t0)
+
+    ; pop $ra
+    LW $ra, 0($sp)
+    ADDI $sp, $sp, 4
     JR $ra
