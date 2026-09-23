@@ -131,7 +131,9 @@ def main():
             break
     print(dbg_send(s, f"load {BIN}").strip().splitlines()[-2:])
     print("[4/4] Arrancando CPU... Controles W A S D | Salir Ctrl+C o ESC")
-    dbg_send(s, "continue", timeout=10)
+    # `continue` NO devuelve prompt (el juego corre infinito): fire-and-forget
+    s.sendall(b"continue\n")
+    time.sleep(0.5)
 
     pty_fd = os.open(pts, os.O_RDWR | os.O_NONBLOCK)
     stdin_fd = sys.stdin.fileno()

@@ -21,8 +21,9 @@ game_loop:
     JAL clear_screen
     JAL draw_grid
     
-    ; Delay (Busy wait)
-    ADDI $t0, $zero, 0x4000
+    ; Delay (Busy wait) - ajustado para modo telnet (~0.5s/frame).
+    ; Si va muy rapido/lento, cambiar 0x0400 (ver COMO_JUGAR_SNAKE.md).
+    ADDI $t0, $zero, 0x0400
 delay_loop:
     ADDI $t1, $zero, 1
     SUB $t0, $t0, $t1
